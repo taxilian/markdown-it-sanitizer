@@ -20,12 +20,25 @@ module.exports = function sanitizer_plugin(md, options) {
   var removeUnknown = (typeof options.removeUnknown !== 'undefined') ? options.removeUnknown : false;
   var removeUnbalanced = (typeof options.removeUnbalanced !== 'undefined') ? options.removeUnbalanced : false;
   var imageClass = (typeof options.imageClass !== 'undefined') ? options.imageClass : '';
+  var extraTags = (typeof options.extraTags !== 'undefined') ? options.extraTags : [];
+  var restrictTags = (typeof options.restrictTags !== 'undefined') ? options.restrictTags : [];
+  var allowImages = options.allowImages !== false ? true : false;
   var runBalancer = false;
   var j;
 
 
   var allowedTags = [ 'a', 'b', 'blockquote', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'h5',
                      'h6', 'li', 'ol', 'p', 'pre', 's', 'sub', 'sup', 'strong', 'ul' ];
+  if (extraTags.length) { allowedTags = allowedTags.concat(extraTags); }
+  if (restrictTags.length) {
+      for (var i = 0; i < restrictTags.length; ++i) {
+          var c = restrictTags[0];
+          var idx = allowedTags.indexOf(c);
+          if (idx > -1) {
+              allowedTags.splice(idx, 1);
+          }
+      }
+  }
   var openTagCount = new Array(allowedTags.length);
   var removeTag = new Array(allowedTags.length);
   for (j = 0; j < allowedTags.length; j++) { openTagCount[j] = 0; }
@@ -58,7 +71,7 @@ module.exports = function sanitizer_plugin(md, options) {
 
       // images
       match = tag.match(regexpImage);
-      if (match) {
+      if (match && allowImages) {
         attrs = match[1];
         url   = getUrl(attrs.match(/src="([^"<>]*)"/i)[1]);
         alt   = attrs.match(/alt="([^"<>]*)"/i);
